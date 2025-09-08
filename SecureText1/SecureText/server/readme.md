@@ -1,0 +1,2 @@
+- how to run backend
+    - `uv run python server/main.py`

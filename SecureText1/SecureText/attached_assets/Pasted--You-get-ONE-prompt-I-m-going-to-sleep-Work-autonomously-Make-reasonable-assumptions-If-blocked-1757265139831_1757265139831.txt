@@ -1,0 +1,410 @@
+**You get ONE prompt. I'm going to sleep. Work autonomously. Make reasonable assumptions. If blocked, stub and move forward. PLAN → BUILD → TEST → FIX → SHIP.**
+
+**Project: Magizh Quiz App**
+A full-stack quiz and flashcard application for creating, sharing, and studying interactive decks with gamification, progress tracking, and adaptive learning. Built as a React SPA with FastAPI backend.
+
+**Tech stack**
+
+* Frontend: React + TypeScript (Vite), Tailwind CSS, Radix UI, React Router, Recharts, React Query
+* Backend: FastAPI + Python, SQLAlchemy ORM + SQLite, Pydantic for validation, python-multipart for uploads, APScheduler for jobs, Alembic for migrations
+* Auth: Google OAuth only, username selection on first login, JWT tokens, HTTP-only cookies
+* Emails: file transport writing JSON to /server/outbox (SMTP optional via env)
+* Tests: pytest + httpx (server), Vitest + React Testing Library (web), Playwright (e2e)
+* DevOps: Docker + Compose, GitHub Actions CI/CD, Makefile automation, pre-commit hooks
+* Lint/format: ESLint + Prettier (frontend), black + isort (backend)
+* Repo layout: /server (FastAPI), /web (React app), /shared (types, utils)
+
+**Core data model (SQLAlchemy)**
+
+* **User** (id, email, google_id, name, username, username_set, bio, avatar_url, created_at, updated_at)
+* **Deck** (id, title, description, user_id, is_public, created_at, updated_at, tags[])
+* **DeckStar** (user_id, deck_id, created_at)
+* **Card** (id, deck_id, question, question_type: mcq/multi_select/fill_blank, options[], correct_answers[], explanation, image_url, created_at, tags[])
+* **DeckComment** (id, deck_id, user_id, content, created_at, updated_at)
+* **ActivityLog** (id, user_id, action_type, resource_type, resource_id, metadata, created_at)
+* **CardBookmark** (user_id, card_id, created_at)
+* **QuizSession** (id, user_id, deck_id, mode: exam/study, started_at, completed_at, score, total_questions)
+* **QuizAnswer** (id, session_id, card_id, user_answers[], is_correct, difficulty_rating: easy/medium/hard, time_taken)
+* **UserProgress** (user_id, deck_id, total_attempts, best_score, last_attempt_at, mastery_level)
+* **Streak** (user_id, current_streak, longest_streak, last_activity_date)
+* **DailyChallenge** (id, user_id, deck_id, date, completed, score, accuracy_percent)
+* **CardFeedback** (card_id, user_id, feedback_type: helpful/unclear/error, message, created_at)
+* **StudyPlan** (user_id, card_id, repetition_count, next_review_at, difficulty: easy/medium/hard)
+
+---
+
+**Adaptive Learning & Gamification**
+
+* **Spaced Repetition**: Cards rated as Hard repeat 3x, Medium 2x, Easy 1x in study mode
+* **Streak System**: Daily challenges require 85% accuracy to maintain streak
+* **Mastery Tracking**: Progress per deck based on consistent high performance
+* **Difficulty Adaptation**: Questions dynamically adjust based on user performance
+* **Achievement System**: Badges for streaks, perfect scores, deck completion
+
+---
+
+**FastAPI (REST, JSON)**
+
+* **Auth (Google OAuth):**
+  * `GET /api/auth/google` (initiate Google OAuth)
+  * `GET /api/auth/google/callback` (handle OAuth callback)
+  * `POST /api/auth/complete-signup` (set username after first Google login)
+  * `POST /api/auth/logout`
+  * `GET /api/auth/me`
+
+* **GitHub-like User Profiles:**
+  * `GET /{username}` (user profile overview)
+  * `GET /{username}?tab=decks` (user's decks with pagination & search)
+  * `GET /{username}?tab=stars` (user's starred decks)
+  * `GET /{username}?tab=activity` (user's recent activity)
+  * `GET /{username}?tab=achievements` (user's badges and streaks)
+
+* **CRUD:**
+  * `/api/decks` (CRUD + duplicate, star/unstar)
+  * `/api/cards` (CRUD + bookmark/unbookmark)
+  * `/api/quiz/sessions` (start, submit answers, complete)
+  * `/api/progress` (user progress, streaks, achievements)
+  * `/api/feedback` (card feedback, quality reports)
+  * `/api/comments` (deck discussions CRUD)
+  * `/api/import/csv` (bulk card import)
+  * `/api/export/deck/{id}` (JSON export)
+  * `/api/upload/image` (image upload for cards)
+
+* **Public sharing:**
+  * `GET /api/public/decks/{id}` (public deck preview)
+  * `GET /api/public/quiz/{shareToken}` (shareable quiz links)
+
+* **Search & Discovery:**
+  * `GET /api/search/decks` (public decks with filters)
+  * `GET /api/tags` (popular tags)
+
+* **Analytics:**
+  * `GET /api/stats/dashboard` (user dashboard stats)
+  * `GET /api/stats/deck/{id}` (deck performance analytics)
+  * `GET /api/analytics/heatmap` (GitHub-style activity calendar)
+  * `GET /api/analytics/performance` (detailed metrics by topic/difficulty)
+  * `GET /api/leaderboards` (daily/weekly top performers)
+  * `GET /api/recommendations` (personalized deck suggestions)
+
+* **Validation:**
+  * Pydantic models on all routes
+  * User ownership checks on private resources
+
+---
+
+**React app routes (SPA)**
+
+* `/login` (Google OAuth button)
+* `/complete-signup` (username selection for new users)
+
+* **/dashboard:** streak display, daily challenges, recent activity, deck performance overview, achievement badges
+* **/{username}:** GitHub-like user profile with tabs (overview, decks, stars, activity, achievements)
+* **/{username}?tab=decks:** user's public decks with search and pagination
+* **/{username}?tab=stars:** decks starred by the user
+* **/{username}?tab=activity:** user's recent quiz sessions and deck updates
+* **/{username}?tab=achievements:** badges, streaks, and learning milestones
+* **/decks:** personal deck library; create/edit/duplicate; public/private toggle; star management; preview mode
+* **/deck/:id:** deck detail view; card management; study/exam mode launcher; performance analytics; share settings
+* **/study/:deckId:** study mode with immediate feedback, adaptive repetition, difficulty rating after each question
+* **/exam/:deckId:** exam mode with timer, no feedback until completion, final score and review
+* **/create:** deck creation wizard; question type selection; bulk import from CSV; tag management
+* **/discover:** browse public decks; search and filter by tags, difficulty, popularity; star and duplicate
+* **/settings:** user settings, change password, email preferences, profile customization
+* **/bookmarks:** saved cards across all decks; study bookmarked cards only
+* **/analytics:** detailed progress tracking, learning patterns, time spent, accuracy trends, weak areas
+
+---
+
+### Study Modes & Adaptive Learning
+
+* **Study Mode:** Immediate feedback, explanation display, adaptive repetition based on difficulty rating
+* **Exam Mode:** Timed sessions, no hints, final score with detailed review
+* **Review Mode:** Focus on previously incorrect answers only
+* **Spaced Repetition:** Algorithm schedules card reviews based on performance and time intervals
+
+---
+
+### Gamification Features
+
+* **Daily Challenges:** Random deck selection, streak maintenance with 85% accuracy requirement
+* **Achievement System:** Perfect scores, consistency streaks, deck mastery, community contributions
+* **Progress Visualization:** Learning curves, accuracy trends, time investment tracking
+* **Leaderboards:** Optional community features for public deck creators
+
+---
+
+### Security
+
+* HTTP-only cookies with JWT tokens, SQLite session storage via SQLAlchemy
+* Google OAuth verification ensures valid email addresses
+* Username uniqueness validation on signup completion
+* Rate limits on auth endpoints and quiz submissions using slowapi
+* Input validation with Pydantic models
+* User ownership verification on all private resources
+
+---
+
+### Background jobs (APScheduler)
+
+* **Daily 00:01:** Reset daily challenges, update streaks, process spaced repetition schedules
+* **Weekly:** Generate learning analytics summaries, clean up expired tokens
+* **Monthly:** Archive old quiz sessions, generate achievement badges
+
+---
+
+### Testing
+
+* **pytest unit:** spaced repetition algorithm, scoring calculation, streak logic, difficulty adaptation, username validation
+* **httpx integration:** Google OAuth flows, username completion, quiz session management, deck sharing, progress tracking, user profile routes
+* **Vitest + RTL:** quiz components, deck editor, progress visualizations, study mode interactions, user profile tabs
+* **Playwright e2e:**
+  * Google login → complete signup with username → create deck → add cards → study mode → exam mode → view progress
+  * visit user profile → browse decks tab → star deck → view in stars tab
+  * discover public deck → duplicate → customize → share → track analytics
+  * daily challenge flow → maintain streak → earn achievements
+* **CI:** pnpm lint, typecheck, test, build (frontend), black, isort, pytest (backend)
+
+---
+
+---
+
+## DevOps & Deployment
+
+### Docker & Containerization
+- **Multi-stage Dockerfile**: Root-level Dockerfile building both `/server` (FastAPI) and `/web` (React)
+- **Docker Compose**: Local development with hot reload, database, and volume mounts
+- **Production image**: Optimized with nginx serving static React build + FastAPI backend
+
+### CI/CD Pipeline (GitHub Actions)
+- **Lint & Test**: ESLint, Prettier, black, isort, pytest, vitest on every PR
+- **Build & Deploy**: Auto-deploy to Replit/Fly.io/Render on main branch
+- **Database migrations**: Alembic schema versioning with auto-migration on deploy
+
+### Database Management
+- **Alembic migrations**: Version-controlled schema changes
+- **Reset command**: `make reset-db` → wipe + reseed with demo data
+- **Backup/restore**: Simple SQLite file management
+
+---
+
+## Enhanced Developer Experience
+
+### Build Automation
+- **Makefile**: `make dev`, `make test`, `make lint`, `make seed`, `make reset-db`, `make docker-build`
+- **Pre-commit hooks**: Husky + lint-staged for format/typecheck before commits
+- **Hot reload**: Both FastAPI and React with file watching
+
+### Type Safety & Shared Models
+- **Typed shared models**: `/shared/types` synced between Pydantic (FastAPI) and TypeScript (React)
+- **Code generation**: Auto-generate TypeScript types from Pydantic models
+- **API client**: Type-safe React Query hooks generated from FastAPI OpenAPI spec
+
+### Monitoring & Logging
+- **Error tracking**: Sentry integration (stubbed if env var not set)
+- **Structured logging**: JSON logs with request IDs, user context
+- **Performance monitoring**: Request timing, database query analysis
+
+---
+
+## UX Polish & Performance
+
+### Loading & Interaction States
+- **Skeleton loaders**: Cards, decks, profile sections with shimmer effects
+- **Optimistic UI**: Instant feedback with React Query optimistic updates
+- **Progressive loading**: Lazy load deck cards, infinite scroll for discovery
+
+### Mobile-First Design
+- **Responsive breakpoints**: Mobile (320px+), tablet (768px+), desktop (1024px+)
+- **Touch-friendly**: Large tap targets, swipe gestures for card navigation
+- **Keyboard navigation**: Press 1,2,3,4 for MCQ answers, arrow keys for navigation
+
+### PWA & Offline Support
+- **Service worker**: Cache quiz data for offline sessions
+- **Install prompt**: Add to home screen functionality
+- **Sync on reconnect**: Queue offline actions, sync when online
+- **Offline indicator**: Clear UI state for network status
+
+---
+
+## Content Management & Import/Export
+
+### Bulk Operations
+- **CSV import**: Upload spreadsheet with questions, options, correct answers
+- **JSON export**: Full deck export with metadata, sharing tokens
+- **Deck templates**: Pre-built question formats (language learning, coding, etc.)
+
+### Rich Content Support
+- **Markdown rendering**: Questions and explanations with markdown support
+- **MathJax integration**: LaTeX formulas in STEM questions
+- **Image upload**: Question images with automatic optimization
+- **Code syntax highlighting**: Programming questions with proper formatting
+
+### Content APIs
+- `POST /api/import/csv` - Bulk card import
+- `GET /api/export/deck/{id}` - JSON export with sharing token
+- `POST /api/upload/image` - Image upload with CDN integration
+
+---
+
+## Community & Social Features
+
+### Discussion System
+- **Deck comments**: Simple CRUD for deck-level discussions
+- **Question feedback**: "This helped me" / "This was confusing" voting
+- **Study groups**: Collaborative deck creation and sharing
+
+### Leaderboards & Competition
+- **Daily/Weekly leaderboards**: Top scorers for public decks
+- **Achievement badges**: Streak master, perfect scorer, community contributor
+- **Deck popularity**: Star count, completion rate, difficulty rating
+
+### Enhanced Discovery
+- **Trending decks**: Algorithm based on recent activity and ratings
+- **Recommended for you**: Based on tags, difficulty, and study history
+- **Featured collections**: Curated deck collections by topic
+
+### Community APIs
+- `/api/comments` - Deck discussion CRUD
+- `/api/leaderboards` - Daily/weekly top performers
+- `/api/recommendations` - Personalized deck suggestions
+
+---
+
+## Security & Privacy Enhancements
+
+### Rate Limiting & Protection
+- **Per-IP limits**: 100 requests/minute for anonymous, 1000 for authenticated
+- **Per-user limits**: Quiz submissions, deck creation, API calls
+- **CAPTCHA integration**: For suspicious activity patterns
+
+### Audit & Compliance
+- **Activity logging**: Login attempts, deck creation, quiz sessions, data exports
+- **Privacy controls**: Toggle visibility for bio, achievements, activity feed
+- **Data retention**: Configurable cleanup of old sessions and logs
+
+### Enhanced Security
+- **CSP headers**: Content Security Policy for XSS protection
+- **CORS configuration**: Strict origin validation
+- **Input sanitization**: HTML/script injection prevention
+
+---
+
+## Advanced Analytics & Insights
+
+### Visual Analytics
+- **GitHub-style heatmap**: Daily activity calendar with contribution intensity
+- **Learning curves**: Progress visualization over time per deck/topic
+- **Performance breakdown**: Accuracy by question type, difficulty, tags
+
+### Detailed Metrics
+- **Response time analysis**: Average time per difficulty level
+- **Learning pattern detection**: Optimal study times, retention curves
+- **Weak area identification**: Topics needing more practice
+
+### Analytics APIs
+- `GET /api/analytics/heatmap` - Activity calendar data
+- `GET /api/analytics/performance` - Detailed performance metrics
+- `GET /api/analytics/patterns` - Learning pattern insights
+
+---
+
+## Documentation & Demo Excellence
+
+### Demo & Onboarding
+- **Demo user**: Seeded bypass for Google OAuth (quick preview mode)
+- **Interactive tutorial**: First-time user walkthrough
+- **Sample content**: Pre-loaded decks across different subjects
+
+### Documentation Suite
+- **README.md**: One-click Replit setup, live demo links, feature overview
+- **API_REFERENCE.md**: Human-friendly API docs beyond FastAPI auto-docs
+- **DEMO.md**: Screen-recorded GIFs of major user flows
+- **CONTRIBUTING.md**: Development setup, coding standards, PR process
+
+### Developer Experience
+- **Seed script**: `python seed.py` creates realistic demo data with demo user
+- **PLAN.md**: Detailed build phases and decision rationale
+- **MORNING_REPORT.md**: Daily development log with progress and blockers
+- **CHANGELOG.md**: Structured release notes with feature additions
+
+---
+
+---
+
+## Advanced Features (Nice-to-Have)
+
+### AI Integration
+- **Smart hints**: LLM-powered explanations for wrong answers (stubbed OpenAI integration)
+- **Question generation**: AI-assisted card creation from topics
+- **Adaptive difficulty**: ML-based question ordering based on performance
+
+### Gamification Enhancements
+- **Streak animations**: Confetti, progress bars, celebration effects
+- **Achievement system**: Unlock badges with visual rewards
+- **Study challenges**: Weekly themed challenges with leaderboards
+
+### Advanced Study Features
+- **Spaced repetition optimization**: Algorithm tuning based on forgetting curves
+- **Study session recommendations**: Optimal timing based on performance data
+- **Collaborative study**: Real-time multiplayer quiz sessions
+
+---
+
+### **Non-negotiables**
+- **Production-grade quality**: Docker deployment, CI/CD, comprehensive testing
+- **Mobile-first responsive design**: Works flawlessly on Replit mobile preview
+- **Keyboard-first navigation**: Full quiz experience without mouse
+- **Offline-first PWA**: Install prompt, service worker, sync capabilities
+- **Type safety**: Shared models between FastAPI and React with code generation
+- **Performance**: Skeleton loaders, optimistic UI, sub-200ms API responses
+- **Accessibility**: WCAG 2.1 AA compliance, screen reader support
+- **Documentation**: README with live demo, API docs, development guides
+
+---
+
+---
+
+### **Finish Condition - Portfolio-Grade Project**
+
+#### Core Functionality ✅
+- **Authentication**: Google OAuth with username completion working
+- **Study modes**: Exam/study/review modes with adaptive repetition
+- **Deck management**: CRUD, sharing, starring, discovery with search/filters
+- **Progress tracking**: Streaks, achievements, detailed analytics
+- **User profiles**: GitHub-like profiles with tabs (decks, stars, activity, achievements)
+
+#### Production Features ✅
+- **Docker deployment**: Multi-stage build, compose for local dev
+- **CI/CD pipeline**: GitHub Actions with lint, test, build, deploy
+- **Database migrations**: Alembic with version control
+- **PWA capabilities**: Service worker, offline mode, install prompt
+- **Performance**: Skeleton loaders, optimistic UI, <200ms API responses
+
+#### Developer Experience ✅
+- **One-click Replit run**: Frontend + backend with seeded data
+- **Makefile automation**: `make dev`, `make test`, `make lint`, `make seed`
+- **Type safety**: Shared models between FastAPI/React with code generation
+- **Pre-commit hooks**: Automated formatting and type checking
+- **Comprehensive testing**: pytest, vitest, playwright all green
+
+#### UX Polish ✅
+- **Mobile-responsive**: Perfect on Replit mobile preview
+- **Keyboard navigation**: Full quiz experience with hotkeys (1,2,3,4 for MCQ)
+- **Dark/light themes**: Accessible color schemes with system preference detection
+- **Loading states**: Skeleton UI for all async operations
+- **Error boundaries**: Graceful error handling with user-friendly messages
+
+#### Content & Community ✅
+- **Bulk import/export**: CSV upload, JSON export with sharing tokens
+- **Rich content**: Markdown support, MathJax for formulas, image uploads
+- **Community features**: Comments, leaderboards, deck recommendations
+- **Analytics**: GitHub-style heatmap, performance breakdowns, learning insights
+
+#### Documentation ✅
+- **README.md**: Live demo link, one-click setup, feature showcase
+- **DEMO.md**: Screen-recorded GIFs of major flows
+- **API_REFERENCE.md**: Human-friendly API documentation
+- **MORNING_REPORT.md**: Development log showing real project progression
+- **Demo user**: Seeded Google OAuth bypass for instant preview
+
+**Result**: A production-grade SaaS prototype that demonstrates full-stack expertise, modern development practices, and attention to user experience - perfect for portfolios and technical interviews.

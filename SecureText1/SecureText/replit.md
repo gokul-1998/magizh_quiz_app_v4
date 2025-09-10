@@ -4,6 +4,12 @@
 A comprehensive full-stack quiz and flashcard application with Google OAuth authentication, spaced repetition learning, gamification system, and GitHub-style user profiles. Built with FastAPI backend and React TypeScript frontend.
 
 ## Recent Changes
+- **September 10, 2025**: Critical security and configuration fixes applied
+  - Fixed CORS configuration to use `allow_origin_regex` for proper Replit domain handling
+  - Removed committed Google OAuth client secret file and secured with .gitignore rules
+  - Set up proper environment variable configuration for production deployment
+  - Updated frontend API client to use environment variables instead of hardcoded URLs
+  - Configured Vite development proxy for improved local development workflow
 - **September 7, 2025**: Complete production-ready implementation with all advanced features
 - Google OAuth authentication with secure JWT tokens and Replit Secrets integration
 - Full spaced repetition algorithm (SM-2) with adaptive learning and difficulty adjustment

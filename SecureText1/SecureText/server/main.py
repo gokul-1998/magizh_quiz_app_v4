@@ -39,7 +39,7 @@ app.add_middleware(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000", "http://localhost:3000", "https://*.replit.dev"],
+    allow_origin_regex=r"https://.*\.replit\.dev|http://localhost:(5000|3000|8000)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,4 +81,4 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True) 
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 

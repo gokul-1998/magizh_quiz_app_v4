@@ -141,16 +141,102 @@ class ApiClient {
     })
   }
 
+  async getDeck(deckId: number) {
+    return this.request<any>(`/api/decks/${deckId}`)
+  }
+
+  async updateDeck(deckId: number, updates: {
+    title?: string
+    description?: string
+    is_public?: boolean
+    tags?: string[]
+  }) {
+    return this.request<any>(`/api/decks/${deckId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    })
+  }
+
+  async deleteDeck(deckId: number) {
+    return this.request<{message: string}>(`/api/decks/${deckId}`, {
+      method: 'DELETE',
+    })
+  }
+
   async starDeck(deckId: number) {
     return this.request<{message: string; is_starred: boolean}>(`/api/decks/${deckId}/star`, {
       method: 'POST',
     })
   }
 
+  async duplicateDeck(deckId: number) {
+    return this.request<any>(`/api/decks/${deckId}/duplicate`, {
+      method: 'POST',
+    })
+  }
+
+  // User endpoints
+  async getUserByUsername(username: string) {
+    return this.request<any>(`/api/users/profile/${username}`)
+  }
+
+  async getUserProgress(username: string) {
+    return this.request<any[]>(`/api/users/profile/${username}/progress`)
+  }
+
+  async getUserStats(username: string) {
+    return this.request<any>(`/api/users/profile/${username}/stats`)
+  }
+
   // Card endpoints
   async getCards(deckId?: number) {
     const params = deckId ? `?deck_id=${deckId}` : ''
     return this.request<any[]>(`/api/cards${params}`)
+  }
+
+  async getDeckCards(deckId: number) {
+    return this.request<any[]>(`/api/decks/${deckId}/cards`)
+  }
+
+  async createCard(card: {
+    deck_id: number
+    question: string
+    question_type: string
+    options: string[]
+    correct_answers: string[]
+    explanation?: string
+    tags?: string[]
+  }) {
+    return this.request<any>('/api/cards', {
+      method: 'POST',
+      body: JSON.stringify(card),
+    })
+  }
+
+  async updateCard(cardId: number, updates: {
+    question?: string
+    question_type?: string
+    options?: string[]
+    correct_answers?: string[]
+    explanation?: string
+    tags?: string[]
+  }) {
+    return this.request<any>(`/api/cards/${cardId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    })
+  }
+
+  async deleteCard(cardId: number) {
+    return this.request<{message: string}>(`/api/cards/${cardId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async bookmarkCard(cardId: number) {
+    return this.request<{message: string; is_bookmarked: boolean}>(`/api/cards/${cardId}/bookmark`, {
+      method: 'POST',
+    })
   }
 
   // Health check

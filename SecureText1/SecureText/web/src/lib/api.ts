@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8001'
+const API_BASE_URL = `https://616683ff-c11d-482d-a0ed-5eebff033948-00-222v5u5g089n7.sisko.replit.dev:8001`
 
 class ApiClient {
   private baseURL: string

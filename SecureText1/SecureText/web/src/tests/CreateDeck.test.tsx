@@ -37,7 +37,8 @@ const mockAuthContext = {
   user: mockUser,
   login: vi.fn(),
   logout: vi.fn(),
-  loading: false
+  isLoading: false,
+  checkAuthStatus: vi.fn()
 }
 
 // Wrapper component with providers

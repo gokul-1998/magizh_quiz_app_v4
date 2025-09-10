@@ -81,6 +81,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    print("inside get current user")
     return user
 
 def get_current_user_optional(request: Request, db: Session = Depends(get_db)):

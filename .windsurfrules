@@ -1,0 +1,318 @@
+# Magizh Quiz App - Windsurf Rules
+# Full-stack quiz and flashcard application with gamification and adaptive learning
+
+# Focus more on Testcases and then on the functionality
+
+## Project Structure
+- `/server` - FastAPI backend with SQLAlchemy ORM
+- `/web` - React + TypeScript frontend with Vite
+- `/shared` - Shared types and utilities between frontend/backend
+- Root level: Docker, CI/CD, and project configuration files
+
+## Tech Stack Requirements
+### Backend (FastAPI)
+- Python 3.11+ with FastAPI framework
+- SQLAlchemy ORM with SQLite database
+- Pydantic for data validation and serialization
+- Google OAuth for authentication only
+- JWT tokens with HTTP-only cookies
+- APScheduler for background jobs
+- Alembic for database migrations
+- pytest + httpx for testing
+
+### Frontend (React)
+- React 18+ with TypeScript and Vite
+- Tailwind CSS for styling
+- Radix UI for accessible components
+- React Router for navigation
+- React Query for state management and API calls
+- Recharts for data visualization
+- Vitest + React Testing Library for testing
+
+### DevOps & Tools
+- Docker with multi-stage builds
+- GitHub Actions for CI/CD
+- Makefile for automation
+- Pre-commit hooks with Husky
+- ESLint + Prettier (frontend)
+- black + isort (backend)
+- Playwright for e2e testing
+
+## Coding Standards
+
+### Backend (Python/FastAPI)
+- Use black for code formatting (line length: 88)
+- Use isort for import sorting
+- Follow PEP 8 naming conventions
+- All API routes must have Pydantic request/response models
+- Use SQLAlchemy declarative models with proper relationships
+- Implement proper error handling with HTTPException
+- Add docstrings to all functions and classes
+- Use type hints throughout the codebase
+- Implement rate limiting on all public endpoints
+- Validate user ownership for private resources
+
+### Frontend (React/TypeScript)
+- Use TypeScript strict mode
+- Follow React functional components with hooks
+- Use Tailwind CSS classes, avoid custom CSS
+- Implement proper error boundaries
+- Use React Query for all API calls
+- Implement skeleton loaders for async operations
+- Follow accessibility guidelines (WCAG 2.1 AA)
+- Use proper semantic HTML elements
+- Implement keyboard navigation support
+- Mobile-first responsive design
+
+### Database Design
+- Use SQLAlchemy declarative models
+- Implement proper foreign key relationships
+- Add created_at/updated_at timestamps where appropriate
+- Use UUIDs for public-facing IDs
+- Implement soft deletes where needed
+- Add proper indexes for query performance
+- Use Alembic migrations for schema changes
+
+## Authentication & Security
+- Google OAuth only - no email/password authentication
+- Username selection required on first login
+- JWT tokens stored in HTTP-only cookies
+- Implement CSRF protection
+- Rate limiting: 100 req/min anonymous, 1000 req/min authenticated
+- Input validation on all endpoints
+- SQL injection prevention with SQLAlchemy ORM
+- XSS protection with proper content sanitization
+
+## API Design Patterns
+### RESTful Endpoints
+- Use proper HTTP methods (GET, POST, PUT, DELETE)
+- Consistent URL patterns: `/api/{resource}` for collections
+- Use plural nouns for resource names
+- Implement pagination for list endpoints
+- Return proper HTTP status codes
+- Include metadata in list responses (total, page, limit)
+
+### Request/Response Format
+- All requests/responses in JSON format
+- Use Pydantic models for validation
+- Consistent error response format
+- Include request IDs for debugging
+- Implement proper CORS headers
+
+### Authentication Routes
+- GET /api/auth/google - Initiate Google OAuth 
+- GET /api/auth/google/callback - Handle OAuth callback 
+- POST /api/auth/complete-signup - Set username after first login 
+- POST /api/auth/logout - Clear session 
+- GET /api/auth/me - Get current user info
+
+
+
+### Core CRUD Routes
+- /api/decks - Deck management (CRUD + star/unstar) 
+- /api/cards - Card management (CRUD + bookmark) 
+- /api/quiz/sessions - Quiz session management 
+- /api/progress - User progress and streaks 
+- /api/comments - Deck comments 
+- /api/feedback - Card feedback
+
+
+
+## Frontend Architecture
+### Component Structure
+- Use functional components with hooks
+- Implement proper prop types with TypeScript
+- Create reusable UI components in `/components/ui`
+- Feature-specific components in `/components/features`
+- Use compound component patterns for complex UI
+
+### State Management
+- Use React Query for server state
+- Use React Context for global client state
+- Implement optimistic updates for better UX
+- Cache API responses appropriately
+- Handle loading and error states consistently
+
+### Routing Structure
+- /login - Google OAuth 
+- /complete-signup - Username selection 
+- /dashboard - User dashboard with streaks and challenges 
+- /{username} - User profile with tabs 
+- /decks - Personal deck library 
+- /deck/:id - Deck detail and management 
+- /study/:deckId - Study mode 
+- /exam/:deckId - Exam mode 
+- /create - Deck creation 
+- /discover - Public deck discovery 
+- /settings - User settings 
+- /bookmarks - Saved cards 
+- /analytics - Progress analytics
+
+
+## Database Schema Requirements
+### Core Models
+- User: id, email, google_id, name, username, bio, avatar_url
+- Deck: id, title, description, user_id, is_public, tags
+- Card: id, deck_id, question, question_type, options, correct_answers, explanation
+- QuizSession: id, user_id, deck_id, mode, score, completed_at
+- QuizAnswer: id, session_id, card_id, user_answers, is_correct, time_taken
+- UserProgress: user_id, deck_id, total_attempts, best_score, mastery_level
+- Streak: user_id, current_streak, longest_streak, last_activity_date
+
+### Relationships
+- User has many Decks (one-to-many)
+- Deck has many Cards (one-to-many)
+- User has many QuizSessions (one-to-many)
+- QuizSession has many QuizAnswers (one-to-many)
+- Many-to-many: User ↔ Deck (stars), User ↔ Card (bookmarks)
+
+## Testing Requirements
+### Backend Testing (pytest)
+- Unit tests for all business logic
+- Integration tests for API endpoints
+- Test authentication flows
+- Test database operations
+- Mock external services (Google OAuth)
+- Achieve >80% code coverage
+
+### Frontend Testing (Vitest + RTL)
+- Unit tests for utility functions
+- Component tests for UI interactions
+- Integration tests for user flows
+- Mock API calls with MSW
+- Test accessibility features
+- Achieve >80% code coverage
+
+### E2E Testing (Playwright)
+- Complete user journeys
+- Authentication flows
+- Quiz taking experience
+- Deck creation and management
+- Cross-browser compatibility
+- Mobile responsiveness
+
+## Performance Requirements
+- API responses < 200ms for 95th percentile
+- Frontend bundle size < 500KB gzipped
+- Lighthouse score > 90 for all metrics
+- Implement lazy loading for routes and components
+- Use React.memo for expensive components
+- Optimize database queries with proper indexes
+
+## Deployment & DevOps
+### Docker Configuration
+- Multi-stage Dockerfile for production builds
+- Separate services for development (docker-compose.yml)
+- Health checks for all services
+- Proper environment variable handling
+- Volume mounts for development
+
+### CI/CD Pipeline
+- Run linting and formatting checks
+- Execute all test suites
+- Build and test Docker images
+- Deploy to staging/production environments
+- Database migration automation
+
+### Environment Management
+- Separate configs for dev/staging/prod
+- Secure secret management
+- Environment-specific feature flags
+- Proper logging configuration
+
+## Development Workflow
+### Git Workflow
+- Feature branches from main
+- Descriptive commit messages
+- Pull request reviews required
+- Squash and merge strategy
+- Semantic versioning for releases
+
+### Code Quality
+- Pre-commit hooks for formatting
+- Automated code review with GitHub Actions
+- Dependency vulnerability scanning
+- Regular dependency updates
+- Code coverage reporting
+
+### Documentation
+- README with setup instructions
+- API documentation with examples
+- Component documentation with Storybook
+- Architecture decision records
+- Deployment guides
+
+## Accessibility Requirements
+- WCAG 2.1 AA compliance
+- Keyboard navigation support
+- Screen reader compatibility
+- High contrast mode support
+- Focus management for SPAs
+- Alternative text for images
+- Proper heading hierarchy
+
+## Mobile & PWA Requirements
+- Mobile-first responsive design
+- Touch-friendly interface (44px+ tap targets)
+- Service worker for offline functionality
+- App manifest for installation
+- Push notifications for study reminders
+- Optimized for mobile performance
+
+## Gamification Features
+### Streak System
+- Daily challenges with 85% accuracy requirement
+- Visual streak indicators
+- Streak recovery mechanics
+- Achievement badges for milestones
+
+### Progress Tracking
+- Mastery levels per deck
+- Learning analytics dashboard
+- Performance trends visualization
+- Spaced repetition algorithm
+
+### Social Features
+- Public deck sharing
+- User profiles with activity feeds
+- Leaderboards (optional)
+- Deck comments and discussions
+
+## Content Management
+### Question Types
+- Multiple choice (single answer)
+- Multiple select (multiple answers)
+- Fill in the blank
+- Future: Code execution, audio questions
+
+### Import/Export
+- CSV bulk import for cards
+- JSON export for decks
+- Image upload for questions
+- Markdown support for rich content
+
+## Error Handling
+### Backend
+- Structured error responses
+- Proper HTTP status codes
+- Request ID tracking
+- Comprehensive logging
+
+### Frontend
+- Error boundaries for React components
+- User-friendly error messages
+- Retry mechanisms for failed requests
+- Offline state handling
+
+## Monitoring & Analytics
+### Application Monitoring
+- Error tracking with Sentry
+- Performance monitoring
+- User analytics (privacy-compliant)
+- Database query optimization
+
+### Business Metrics
+- User engagement tracking
+- Quiz completion rates
+- Deck popularity metrics
+- Learning effectiveness analysis

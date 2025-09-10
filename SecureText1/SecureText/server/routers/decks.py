@@ -130,8 +130,11 @@ async def create_deck(deck: DeckCreate, current_user: models.User = Depends(get_
             "email": current_user.email,
             "name": current_user.name,
             "username": current_user.username,
+            "bio": current_user.bio,
+            "avatar_url": current_user.avatar_url,
             "username_set": current_user.username_set,
-            "created_at": current_user.created_at
+            "created_at": current_user.created_at,
+            "updated_at": current_user.updated_at
         },
         "card_count": 0,
         "is_starred": False

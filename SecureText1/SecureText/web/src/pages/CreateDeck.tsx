@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import apiClient from '../lib/api'
 
 export default function CreateDeck() {
   const navigate = useNavigate()
@@ -31,22 +32,19 @@ export default function CreateDeck() {
     setIsSubmitting(true)
 
     try {
-      // For demo purposes, simulate deck creation
-      const newDeck = {
-        id: Date.now(), // Mock ID
+      // Create deck via API
+      const deckData = {
         title: formData.title,
         description: formData.description,
         is_public: formData.is_public,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        created_at: new Date().toISOString(),
-        card_count: 0,
-        owner: user
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
       }
 
+      const newDeck = await apiClient.createDeck(deckData)
       console.log('Created deck:', newDeck)
       
-      // Redirect to decks page
-      navigate('/decks')
+      // Redirect to user profile decks tab
+      navigate(`/${user.username}?tab=decks`)
     } catch (error) {
       console.error('Error creating deck:', error)
     } finally {
@@ -138,7 +136,7 @@ export default function CreateDeck() {
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <button
                 type="button"
-                onClick={() => navigate('/decks')}
+                onClick={() => navigate(`/${user.username}?tab=decks`)}
                 className="btn"
                 style={{ backgroundColor: '#f3f4f6', color: '#374151' }}
               >

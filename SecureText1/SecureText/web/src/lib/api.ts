@@ -67,6 +67,49 @@ class ApiClient {
     return this.request<any>('/api/auth/me')
   }
 
+  async completeSignup(userData: { username: string }) {
+    return this.request<any>('/api/auth/complete-signup', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    })
+  }
+
+  async getUserProfile(username: string) {
+    return this.request<any>(`/api/users/profile/${username}`)
+  }
+
+  async getUserDecks(username: string, params: {
+    skip?: number
+    limit?: number
+    search?: string
+  } = {}) {
+    const searchParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString())
+      }
+    })
+    
+    const query = searchParams.toString()
+    return this.request<any[]>(`/api/users/profile/${username}/decks${query ? `?${query}` : ''}`)
+  }
+
+  async getDiscoverUsers(params: {
+    skip?: number
+    limit?: number
+    search?: string
+  } = {}) {
+    const searchParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString())
+      }
+    })
+    
+    const query = searchParams.toString()
+    return this.request<any[]>(`/api/users/discover${query ? `?${query}` : ''}`)
+  }
+
   // Deck endpoints
   async getDecks(params: {
     skip?: number

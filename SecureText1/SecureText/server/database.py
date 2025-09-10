@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # Database URL - Force SQLite for development
-DATABASE_URL = "sqlite:///./quiz_app.db"
+DATABASE_URL = "sqlite:///./quiz_app1.db"
 
 # Create engines
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})

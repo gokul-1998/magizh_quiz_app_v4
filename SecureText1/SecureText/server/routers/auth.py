@@ -86,7 +86,7 @@ async def google_callback(request: Request, response: Response, db: Session = De
         if not user.username_set:
             redirect_response = RedirectResponse(url="http://localhost:5000/complete-signup")
         else:
-            redirect_response = RedirectResponse(url="http://localhost:5000/dashboard")
+            redirect_response = RedirectResponse(url=f"http://localhost:5000/{user.username}")
         
         # Set HTTP-only cookie on redirect response
         redirect_response.set_cookie(
@@ -189,7 +189,10 @@ async def get_current_user_info(current_user: models.User = Depends(get_current_
         "id": current_user.id,
         "email": current_user.email,
         "name": current_user.name,
+        "username": current_user.username,
         "username_set": current_user.username_set,
+        "bio": current_user.bio,
+        "avatar_url": current_user.avatar_url,
         "created_at": current_user.created_at,
         "updated_at": current_user.updated_at
     }

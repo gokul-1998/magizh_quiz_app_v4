@@ -16,6 +16,14 @@ interface UserProfileData {
   current_streak: number
 }
 
+interface Activity {
+  id: number
+  action_type: string
+  resource_type: string
+  created_at: string
+  resource_title?: string
+}
+
 export default function UserProfile() {
   const { user: currentUser } = useAuth()
   const { username } = useParams<{ username: string }>()
@@ -69,6 +77,28 @@ export default function UserProfile() {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  const getActivityIcon = (actionType: string) => {
+    switch (actionType) {
+      case 'complete_quiz': return '✅'
+      case 'create_deck': return '🆕'
+      case 'star_deck': return '⭐'
+      default: return '📝'
+    }
+  }
+
+  const getActivityDescription = (activity: Activity) => {
+    switch (activity.action_type) {
+      case 'complete_quiz':
+        return `Completed quiz for "${activity.resource_title}"`
+      case 'create_deck':
+        return `Created deck "${activity.resource_title}"`
+      case 'star_deck':
+        return `Starred deck "${activity.resource_title}"`
+      default:
+        return `Activity on "${activity.resource_title}"`
+    }
   }
 
   if (loading) {
@@ -154,7 +184,7 @@ export default function UserProfile() {
           { id: 'decks', label: '📚 Decks', count: profile.total_decks },
           { id: 'stars', label: '⭐ Stars', count: profile.total_stars },
           { id: 'activity', label: '📊 Activity', count: null },
-          { id: 'achievements', label: '🏆 Achievements', count: 0 }
+          { id: 'achievements', label: '🏆 Achievements', count: achievements.length }
         ].map(tab => (
           <button
             key={tab.id}
@@ -245,52 +275,6 @@ export default function UserProfile() {
                           {deck.title}
                         </Link>
                       </h3>
-                      <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                        {deck.description}
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem' }}>
-                        <span style={{ color: '#6b7280' }}>📊 {deck.card_count || deck.cardCount} cards</span>
-                        {deck.is_starred && <span style={{ color: '#f59e0b' }}>⭐ Starred</span>}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginLeft: '1rem' }}>
-                      {deck.tags && deck.tags.map((tag: string) => (
-                        <span
-                          key={tag}
-                          style={{
-                            backgroundColor: '#f3f4f6',
-                            color: '#6b7280',
-                            fontSize: '0.75rem',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '0.25rem'
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )) : (
-                <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📚</div>
-                  <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No decks yet</h3>
-                  <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-                    {currentUser && currentUser.username === profile.username 
-                      ? "You haven't created any public decks yet. Start by creating your first deck!"
-                      : "This user hasn't created any public decks yet."}
-                  </p>
-                  {currentUser && currentUser.username === profile.username && (
-                    <Link 
-                      to="/create" 
-                      className="btn btn-primary"
-                      style={{ padding: '0.75rem 1.5rem' }}
-                    >
-                      Create Your First Deck
-                    </Link>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -298,14 +282,26 @@ export default function UserProfile() {
 
       {activeTab === 'stars' && (
         <div>
-          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⭐</div>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No starred decks</h3>
-            <p style={{ color: '#6b7280' }}>
-              {currentUser && currentUser.username === profile.username 
-                ? "You haven't starred any decks yet. Explore the discover page to find interesting decks!"
-                : "This user hasn't starred any decks yet."}
-            </p>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {starredDecks.length > 0 ? starredDecks.map((deck: any) => (
+              <div key={deck.id} className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                      <Link to={`/deck/${deck.id}`} style={{ color: '#3b82f6', textDecoration: 'none' }}>
+                        ⭐ {deck.title}
+                      </Link>
+                    </h3>
+                    <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                      {deck.description}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem' }}>
+                      <span style={{ color: '#6b7280' }}>📊 {deck.card_count} cards</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -314,14 +310,32 @@ export default function UserProfile() {
         <div>
           <div className="card">
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📊 Recent Activity</h3>
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No activity yet</h3>
-              <p style={{ color: '#6b7280' }}>
-                {currentUser && currentUser.username === profile.username 
-                  ? "Start studying and creating decks to see your activity here!"
-                  : "This user hasn't been active yet."}
-              </p>
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {activity.length > 0 ? activity.map((activityItem: any) => (
+                <div
+                  key={activity.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '1rem',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '0.5rem'
+                  }}
+                >
+                  <span style={{ fontSize: '1.5rem' }}>
+                    {getActivityIcon(activityItem.action_type)}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.875rem', color: '#374151' }}>
+                      {getActivityDescription(activityItem)}
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                      {formatDate(activityItem.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -329,14 +343,25 @@ export default function UserProfile() {
 
       {activeTab === 'achievements' && (
         <div>
-          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No achievements yet</h3>
-            <p style={{ color: '#6b7280' }}>
-              {currentUser && currentUser.username === profile.username 
-                ? "Keep studying and creating to unlock achievements!"
-                : "This user hasn't unlocked any achievements yet."}
-            </p>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {achievements.length > 0 ? achievements.map((achievement: any) => (
+              <div key={achievement.type} className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <span style={{ fontSize: '3rem' }}>{achievement.icon}</span>
+                  <div>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                      {achievement.title}
+                    </h3>
+                    <p style={{ color: '#6b7280', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                      {achievement.description}
+                    </p>
+                    <p style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                      Earned on {formatDate(achievement.earned_at)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

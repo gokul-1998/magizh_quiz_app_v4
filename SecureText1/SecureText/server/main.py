@@ -51,7 +51,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(decks.router, prefix="/api/decks", tags=["decks"])
 app.include_router(cards.router, prefix="/api/cards", tags=["cards"])
 app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
-app.include_router(users.router, prefix="", tags=["users"])  # GitHub-style user profiles
+app.include_router(users.router, prefix="/api/users", tags=["users"])  # GitHub-style user profiles
 app.include_router(import_export.router, prefix="/api/import", tags=["import/export"])
 
 @app.get("/health")
@@ -81,4 +81,4 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True) 

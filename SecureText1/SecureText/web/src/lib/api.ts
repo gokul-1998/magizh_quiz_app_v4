@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `https://616683ff-c11d-482d-a0ed-5eebff033948-00-222v5u5g089n7.sisko.replit.dev:8000`
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://localhost:8000`
 
 class ApiClient {
   private baseURL: string

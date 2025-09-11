@@ -33,9 +33,10 @@ class TestCardCreation:
         assert "id" in data
         assert "created_at" in data
 
-    def test_create_card_without_auth(self, client, sample_deck, sample_card_data):
+    def test_create_card_without_auth(self, client, sample_card_data):
         """Test card creation without authentication"""
-        card_data = {**sample_card_data, "deck_id": sample_deck["id"]}
+        # Use a mock deck ID instead of the authenticated sample_deck fixture
+        card_data = {**sample_card_data, "deck_id": 1}
         response = client.post("/api/cards/", json=card_data)
         assert response.status_code == 401
 

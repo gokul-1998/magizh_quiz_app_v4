@@ -9,6 +9,7 @@ import apiClient from '../lib/api'
 // Mock the API client
 vi.mock('../lib/api', () => ({
   default: {
+    getUserProfile: vi.fn(),
     getUserDecks: vi.fn(),
     getUserProgress: vi.fn(),
     getUserStats: vi.fn()
@@ -90,8 +91,8 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => (
 describe('UserProfile Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(apiClient.getUserProfile).mockResolvedValue(mockUser)
     vi.mocked(apiClient.getUserDecks).mockResolvedValue(mockDecks)
-    vi.mocked(apiClient.getUserProgress).mockResolvedValue([])
     vi.mocked(apiClient.getUserStats).mockResolvedValue({
       total_decks: 2,
       total_cards_studied: 50,

@@ -7,9 +7,16 @@ interface DeckCardProps {
   cardCount: number
   tags: string[]
   isStarred?: boolean
+  owner?: {
+    id: number
+    name: string
+    username: string
+    email: string
+    username_set: boolean
+  }
 }
 
-export default function DeckCard({ id, title, description, cardCount, tags, isStarred }: DeckCardProps) {
+export default function DeckCard({ id, title, description, cardCount, tags, isStarred, owner }: DeckCardProps) {
   return (
     <div className="card" style={{ marginBottom: '1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -22,6 +29,16 @@ export default function DeckCard({ id, title, description, cardCount, tags, isSt
           <p style={{ color: '#6b7280', fontSize: '0.875rem', lineHeight: '1.5', marginBottom: '0.75rem' }}>
             {description}
           </p>
+          
+          {owner && (
+            <div style={{ marginBottom: '0.75rem' }}>
+              <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                by <Link to={`/${owner.username}`} style={{ color: '#3b82f6', textDecoration: 'none' }}>
+                  {owner.username_set ? `@${owner.username}` : owner.name}
+                </Link>
+              </span>
+            </div>
+          )}
         </div>
         <div style={{ marginLeft: '1rem' }}>
           {isStarred ? '⭐' : '☆'}

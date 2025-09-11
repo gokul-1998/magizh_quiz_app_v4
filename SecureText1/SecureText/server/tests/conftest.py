@@ -61,8 +61,11 @@ def override_get_db(db_session):
 
 @pytest.fixture
 def client(override_get_db):
-    """Create test client"""
-    return TestClient(app)
+    """Create fresh test client for each test"""
+    client = TestClient(app)
+    # Clear any existing cookies/sessions
+    client.cookies.clear()
+    return client
 
 @pytest.fixture
 def demo_user(db_session):

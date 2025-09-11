@@ -20,7 +20,14 @@ const sampleDecks = [
     description: "Learn the fundamentals of JavaScript programming",
     cardCount: 15,
     tags: ["javascript", "programming", "web"],
-    isStarred: false
+    isStarred: false,
+    owner: {
+      id: 1,
+      name: "Alice Johnson",
+      username: "alicej",
+      email: "alice@example.com",
+      username_set: true
+    }
   },
   {
     id: 2,
@@ -28,7 +35,14 @@ const sampleDecks = [
     description: "Master lists, dictionaries, and sets in Python",
     cardCount: 20,
     tags: ["python", "data-structures", "programming"],
-    isStarred: true
+    isStarred: true,
+    owner: {
+      id: 2,
+      name: "Bob Smith",
+      username: "bobsmith",
+      email: "bob@example.com",
+      username_set: true
+    }
   },
   {
     id: 3,
@@ -36,7 +50,14 @@ const sampleDecks = [
     description: "Understanding useState, useEffect, and custom hooks",
     cardCount: 12,
     tags: ["react", "hooks", "frontend"],
-    isStarred: false
+    isStarred: false,
+    owner: {
+      id: 3,
+      name: "Carol Davis",
+      username: "carold",
+      email: "carol@example.com",
+      username_set: true
+    }
   }
 ]
 
@@ -245,7 +266,7 @@ function Discover() {
       setDecks(result)
     } catch (error) {
       console.error('Error fetching decks:', error)
-      setDecks(sampleDecks) // Fallback to sample data
+      setDecks([]) // Empty array instead of sample data
     } finally {
       setLoading(false)
     }

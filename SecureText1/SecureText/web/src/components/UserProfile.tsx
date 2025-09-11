@@ -1,20 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import apiClient from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import NotFound from './NotFound'
-
-interface UserProfileData {
-  id: number
-  name: string
-  username: string
-  bio?: string
-  avatar_url?: string
-  created_at: string
-  total_decks: number
-  total_stars: number
-  current_streak: number
-}
+import ProfileHeader from './profile/ProfileHeader'
+import NavigationTabs from './profile/NavigationTabs'
+import OverviewTab from './profile/OverviewTab'
+import DecksTab from './profile/DecksTab'
+import GenericEmptyTab from './profile/GenericEmptyTab'
+import type { UserProfileData, Deck } from '../types/user'
 
 export default function UserProfile() {
   const { user: currentUser } = useAuth()
@@ -22,7 +16,7 @@ export default function UserProfile() {
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview')
   const [profile, setProfile] = useState<UserProfileData | null>(null)
-  const [publicDecks, setPublicDecks] = useState<any[]>([])
+  const [publicDecks, setPublicDecks] = useState<Deck[]>([])
   const [loading, setLoading] = useState(true)
   const [decksLoading, setDecksLoading] = useState(false)
 
@@ -63,14 +57,7 @@ export default function UserProfile() {
     fetchPublicDecks()
   }, [username, activeTab])
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
+  
   if (loading) {
     return (
       <div className="container">
@@ -91,254 +78,63 @@ export default function UserProfile() {
     )
   }
 
+  const isOwnProfile = currentUser?.username === profile.username
+  
+  const tabs = [
+    { id: 'overview', label: '📋 Overview', count: undefined },
+    { id: 'decks', label: '📚 Decks', count: profile.total_decks },
+    { id: 'stars', label: '⭐ Stars', count: profile.total_stars },
+    { id: 'activity', label: '📊 Activity', count: undefined },
+    { id: 'achievements', label: '🏆 Achievements', count: 0 }
+  ]
+
   return (
     <div className="container">
-      {/* Profile Header */}
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'start' }}>
-          <img
-            src={profile.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
-            alt={profile.name}
-            style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              objectFit: 'cover'
-            }}
-          />
-          <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0' }}>{profile.name}</h1>
-            <p style={{ color: '#6b7280', margin: '0 0 1rem 0', fontSize: '1.125rem' }}>
-              @{profile.username}
-            </p>
-            {profile.bio && (
-              <p style={{ color: '#374151', marginBottom: '1rem', lineHeight: '1.6' }}>
-                {profile.bio}
-              </p>
-            )}
-            
-            {/* Stats */}
-            <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
-                  {profile.total_decks}
-                </div>
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Decks</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                  {profile.total_stars}
-                </div>
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Stars</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
-                  {profile.current_streak}
-                </div>
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Day Streak</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ProfileHeader profile={profile} />
+      
+      <NavigationTabs 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        tabs={tabs} 
+      />
 
-      {/* GitHub-style Navigation Tabs */}
-      <div style={{ 
-        borderBottom: '1px solid #e5e7eb', 
-        marginBottom: '2rem',
-        display: 'flex',
-        gap: '2rem'
-      }}>
-        {[
-          { id: 'overview', label: '📋 Overview', count: null },
-          { id: 'decks', label: '📚 Decks', count: profile.total_decks },
-          { id: 'stars', label: '⭐ Stars', count: profile.total_stars },
-          { id: 'activity', label: '📊 Activity', count: null },
-          { id: 'achievements', label: '🏆 Achievements', count: 0 }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: '1rem 0',
-              cursor: 'pointer',
-              borderBottom: activeTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === tab.id ? '#3b82f6' : '#6b7280',
-              fontWeight: activeTab === tab.id ? '600' : '400',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            {tab.label}
-            {tab.count !== null && (
-              <span style={{
-                backgroundColor: '#f3f4f6',
-                color: '#374151',
-                fontSize: '0.75rem',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '1rem',
-                minWidth: '1.5rem',
-                textAlign: 'center'
-              }}>
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div>
-          <div className="card">
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>👋 About</h3>
-            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
-              Member since {formatDate(profile.created_at)}
-            </p>
-            <p style={{ lineHeight: '1.6' }}>
-              {profile.bio || 'This user hasn\'t added a bio yet.'}
-            </p>
-          </div>
-        </div>
+        <OverviewTab profile={profile} />
       )}
 
       {activeTab === 'decks' && (
-        <div>
-          {/* Show Create Deck button only if viewing own profile */}
-          {currentUser && currentUser.username === profile.username && (
-            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>My Decks</h2>
-              <Link 
-                to="/create" 
-                style={{
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  textDecoration: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '0.5rem',
-                  fontWeight: '500',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                + Create Deck
-              </Link>
-            </div>
-          )}
-          
-          {decksLoading ? (
-            <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
-              <p>Loading public decks...</p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              {publicDecks.length > 0 ? publicDecks.map((deck: any) => (
-                <div key={deck.id} className="card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                        <Link to={`/deck/${deck.id}`} style={{ color: '#3b82f6', textDecoration: 'none' }}>
-                          {deck.title}
-                        </Link>
-                      </h3>
-                      <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                        {deck.description}
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem' }}>
-                        <span style={{ color: '#6b7280' }}>📊 {deck.card_count || deck.cardCount} cards</span>
-                        {deck.is_starred && <span style={{ color: '#f59e0b' }}>⭐ Starred</span>}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginLeft: '1rem' }}>
-                      {deck.tags && deck.tags.map((tag: string) => (
-                        <span
-                          key={tag}
-                          style={{
-                            backgroundColor: '#f3f4f6',
-                            color: '#6b7280',
-                            fontSize: '0.75rem',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '0.25rem'
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )) : (
-                <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📚</div>
-                  <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No decks yet</h3>
-                  <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-                    {currentUser && currentUser.username === profile.username 
-                      ? "You haven't created any public decks yet. Start by creating your first deck!"
-                      : "This user hasn't created any public decks yet."}
-                  </p>
-                  {currentUser && currentUser.username === profile.username && (
-                    <Link 
-                      to="/create" 
-                      className="btn btn-primary"
-                      style={{ padding: '0.75rem 1.5rem' }}
-                    >
-                      Create Your First Deck
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <DecksTab 
+          decks={publicDecks} 
+          loading={decksLoading} 
+          isOwnProfile={isOwnProfile} 
+        />
       )}
 
       {activeTab === 'stars' && (
-        <div>
-          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⭐</div>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No starred decks</h3>
-            <p style={{ color: '#6b7280' }}>
-              {currentUser && currentUser.username === profile.username 
-                ? "You haven't starred any decks yet. Explore the discover page to find interesting decks!"
-                : "This user hasn't starred any decks yet."}
-            </p>
-          </div>
-        </div>
+        <GenericEmptyTab 
+          icon="⭐" 
+          title="No starred decks" 
+          message="hasn't starred any decks yet. Explore the discover page to find interesting decks!" 
+          isOwnProfile={isOwnProfile} 
+        />
       )}
 
       {activeTab === 'activity' && (
-        <div>
-          <div className="card">
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📊 Recent Activity</h3>
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No activity yet</h3>
-              <p style={{ color: '#6b7280' }}>
-                {currentUser && currentUser.username === profile.username 
-                  ? "Start studying and creating decks to see your activity here!"
-                  : "This user hasn't been active yet."}
-              </p>
-            </div>
-          </div>
-        </div>
+        <GenericEmptyTab 
+          icon="📊" 
+          title="No activity yet" 
+          message="hasn't been active yet. Start studying and creating to see activity here!" 
+          isOwnProfile={isOwnProfile} 
+        />
       )}
 
       {activeTab === 'achievements' && (
-        <div>
-          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No achievements yet</h3>
-            <p style={{ color: '#6b7280' }}>
-              {currentUser && currentUser.username === profile.username 
-                ? "Keep studying and creating to unlock achievements!"
-                : "This user hasn't unlocked any achievements yet."}
-            </p>
-          </div>
-        </div>
+        <GenericEmptyTab 
+          icon="🏆" 
+          title="No achievements yet" 
+          message="hasn't unlocked any achievements yet. Keep studying and creating to unlock achievements!" 
+          isOwnProfile={isOwnProfile} 
+        />
       )}
     </div>
   )

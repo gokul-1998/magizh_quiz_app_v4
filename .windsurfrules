@@ -2,6 +2,8 @@
 # Full-stack quiz and flashcard application with gamification and adaptive learning
 
 # Focus more on Testcases and then on the functionality
+# Keep the code as reusable as possible
+# create small small component jsx files and then mix them together
 
 ## Project Structure
 - `/server` - FastAPI backend with SQLAlchemy ORM

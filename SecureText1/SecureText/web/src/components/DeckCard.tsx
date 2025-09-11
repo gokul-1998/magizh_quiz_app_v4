@@ -21,7 +21,7 @@ export default function DeckCard({ id, title, description, cardCount, tags, isSt
     <div className="card" style={{ marginBottom: '1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
         <div style={{ flex: 1 }}>
-          <Link to={`/deck/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link to={`/${owner?.username}/${encodeURIComponent(title.toLowerCase().replace(/\s+/g, '-'))}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <h3 className="text-lg" style={{ marginBottom: '0.5rem', color: '#1f2937', fontWeight: '600' }}>
               {title}
             </h3>
